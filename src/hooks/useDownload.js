@@ -120,7 +120,7 @@ const useDownload = () => {
         setIsDownloading(false);
         setProgress(0);
         setError(null);
-      }, 6000); // Extended timeout for users to read error message
+      }, 3000);
     }
   }, [isYouTubeBackendConfigured]);
 
@@ -300,7 +300,7 @@ const useDownload = () => {
         setIsDownloading(false);
         setProgress(0);
         setError(null);
-      }, 6000); // Extended timeout for users to read error message
+      }, 3000);
     }
   }, [isYouTubeBackendConfigured]);
 
