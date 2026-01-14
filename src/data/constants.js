@@ -43,6 +43,14 @@ export const CATEGORIES = [
 export const SOURCES = [
   { id: 'jamendo', name: 'Free Music', description: 'Royalty-free music from Jamendo' },
   { id: 'youtube', name: 'YouTube', description: 'Search and download from YouTube' },
+  { id: 'musicbrainz', name: 'MusicBrainz', description: 'Search the open music encyclopedia' },
+];
+
+// MusicBrainz entity types
+export const MUSICBRAINZ_ENTITY_TYPES = [
+  { id: 'recording', name: 'Tracks', description: 'Search for songs and recordings' },
+  { id: 'artist', name: 'Artists', description: 'Search for artists and bands' },
+  { id: 'release', name: 'Albums', description: 'Search for albums, singles, and EPs' },
 ];
 
 // Jamendo API configuration

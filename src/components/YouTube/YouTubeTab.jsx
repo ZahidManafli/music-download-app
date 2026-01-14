@@ -11,6 +11,7 @@ const YouTubeTab = ({
   selectedVideos = [],
   onSelectVideo,
   onAddToCart,
+  initialSearchQuery = '',
 }) => {
   const [previewVideo, setPreviewVideo] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
@@ -30,6 +31,14 @@ const YouTubeTab = ({
 
   // Check if API key is configured
   const isConfigured = isYouTubeConfigured();
+
+  // Handle initial search query from cross-search (MusicBrainz)
+  useEffect(() => {
+    if (initialSearchQuery && initialSearchQuery.trim() && isConfigured) {
+      handleSearchChange(initialSearchQuery);
+      setHasSearched(true);
+    }
+  }, [initialSearchQuery, isConfigured]);
 
   // Handle search input
   const onSearchChange = useCallback((e) => {

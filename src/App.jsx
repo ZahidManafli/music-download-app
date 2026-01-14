@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { FiGrid, FiList, FiFilter, FiX, FiMusic } from 'react-icons/fi';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { FiGrid, FiList, FiFilter, FiX, FiMusic, FiDatabase } from 'react-icons/fi';
 import { FaYoutube } from 'react-icons/fa';
 
 // Layout components
@@ -10,6 +10,9 @@ import { MusicGrid, MusicList, MusicPlayer } from './components/Music';
 
 // YouTube components
 import { YouTubeTab } from './components/YouTube';
+
+// MusicBrainz components
+import { MusicBrainzTab } from './components/MusicBrainz';
 
 // Filter components
 import { CategoryTabs } from './components/Filters';
@@ -34,6 +37,7 @@ import './App.css';
 const SOURCES = [
   { id: 'jamendo', name: 'Free Music', icon: FiMusic },
   { id: 'youtube', name: 'YouTube', icon: FaYoutube },
+  { id: 'musicbrainz', name: 'MusicBrainz', icon: FiDatabase },
 ];
 
 function App() {
@@ -41,7 +45,11 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
-  const [activeSource, setActiveSource] = useState('jamendo'); // 'jamendo' | 'youtube'
+  const [activeSource, setActiveSource] = useState('jamendo'); // 'jamendo' | 'youtube' | 'musicbrainz'
+  const [crossSearchQuery, setCrossSearchQuery] = useState(''); // For cross-search from MusicBrainz to YouTube
+
+  // Refs
+  const youtubeTabRef = useRef(null);
 
   // Hooks
   const filters = useFilters();
@@ -148,6 +156,19 @@ function App() {
     return selection.selectedTracks.filter(t => t.source === source);
   }, [selection.selectedTracks]);
 
+  // Handle cross-search from MusicBrainz to YouTube
+  const handleCrossSearch = useCallback((query) => {
+    setCrossSearchQuery(query);
+    setActiveSource('youtube');
+  }, []);
+
+  // Clear cross-search query after it's been used
+  useEffect(() => {
+    if (activeSource !== 'youtube' && crossSearchQuery) {
+      setCrossSearchQuery('');
+    }
+  }, [activeSource, crossSearchQuery]);
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
@@ -198,7 +219,9 @@ function App() {
                       ${isActive
                         ? source.id === 'youtube'
                           ? 'bg-red-600 text-white shadow-lg shadow-red-500/25'
-                          : 'gradient-btn text-white shadow-lg shadow-pink-500/25'
+                          : source.id === 'musicbrainz'
+                            ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/25'
+                            : 'gradient-btn text-white shadow-lg shadow-pink-500/25'
                         : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'
                       }
                     `}
@@ -339,9 +362,18 @@ function App() {
             {/* YouTube Content */}
             {activeSource === 'youtube' && (
               <YouTubeTab
+                ref={youtubeTabRef}
                 selectedVideos={getSelectedForSource('youtube')}
                 onSelectVideo={handleSelectYouTubeVideo}
                 onAddToCart={handleAddYouTubeToCart}
+                initialSearchQuery={crossSearchQuery}
+              />
+            )}
+
+            {/* MusicBrainz Content */}
+            {activeSource === 'musicbrainz' && (
+              <MusicBrainzTab
+                onCrossSearch={handleCrossSearch}
               />
             )}
           </div>
