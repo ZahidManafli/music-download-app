@@ -7,6 +7,7 @@ const DownloadProgress = ({
   totalTracks = 0,
   currentIndex = 0,
   status = 'downloading', // 'downloading' | 'complete' | 'error'
+  errorMessage = '',
   onClose,
 }) => {
   if (!isVisible) return null;
@@ -37,7 +38,7 @@ const DownloadProgress = ({
 
   return (
     <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 animate-fadeIn">
-      <div className={`glass rounded-2xl p-4 w-80 bg-gradient-to-r ${config.bgClass}`}>
+      <div className={`glass rounded-2xl p-4 ${status === 'error' ? 'w-96' : 'w-80'} bg-gradient-to-r ${config.bgClass}`}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
             <Icon className={`w-5 h-5 ${config.iconClass}`} />
@@ -47,6 +48,11 @@ const DownloadProgress = ({
             {status === 'downloading' && (
               <p className="text-sm text-gray-400 truncate">
                 {currentTrack} ({currentIndex + 1}/{totalTracks})
+              </p>
+            )}
+            {status === 'error' && errorMessage && (
+              <p className="text-sm text-gray-300 mt-1 line-clamp-2">
+                {errorMessage}
               </p>
             )}
           </div>

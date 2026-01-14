@@ -368,6 +368,7 @@ function App() {
         totalTracks={selection.selectionCount}
         currentIndex={download.currentIndex}
         status={download.status}
+        errorMessage={download.error}
         onClose={download.resetDownload}
       />
 
