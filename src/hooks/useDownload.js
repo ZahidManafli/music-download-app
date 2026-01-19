@@ -419,15 +419,24 @@ const useDownload = () => {
             audioParams = songDetails.audioParams;
           }
 
-          // Get audio URL using parameters
-          const audioUrl = await getAudioUrl(song.id, audioParams);
+          // Use backend download endpoint instead of direct fetch
+          // Build query params for audio parameters
+          const params = new URLSearchParams();
+          if (audioParams.lk) params.append('lk', audioParams.lk);
+          if (audioParams.mh) params.append('mh', audioParams.mh);
+          if (audioParams.mr) params.append('mr', audioParams.mr);
+          if (audioParams.hs) params.append('hs', audioParams.hs);
+          
+          const title = encodeURIComponent(song.title || song.name || 'download');
+          const artist = encodeURIComponent(song.artist || '');
+          params.append('title', title);
+          params.append('artist', artist);
 
-          // Download directly from audio URL
-          const response = await fetch(audioUrl, {
-            method: 'GET',
+          const url = `${YOUTUBE_BACKEND_URL}/api/bigaz/download/${song.id}?${params.toString()}`;
+
+          const response = await fetch(url, {
             headers: {
-              'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              'referer': 'https://mp3.big.az/',
+              'x-api-key': YOUTUBE_API_KEY,
             },
           });
 
@@ -437,6 +446,13 @@ const useDownload = () => {
           }
 
           const blob = await response.blob();
+          
+          // Verify blob is not empty
+          if (blob.size === 0) {
+            console.warn(`Empty blob for: ${song.title || song.name}`);
+            continue;
+          }
+
           const filename = sanitizeFilename(`${song.artist || 'Big.az'} - ${song.title || song.name}.mp3`);
           
           zip.file(filename, blob);
@@ -447,6 +463,11 @@ const useDownload = () => {
         } catch (trackError) {
           console.warn(`Error downloading ${song.title || song.name}:`, trackError);
         }
+      }
+
+      // Check if ZIP has any files before generating
+      if (Object.keys(zip.files).length === 0) {
+        throw new Error('No files were successfully downloaded');
       }
 
       // Generate ZIP file
