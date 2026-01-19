@@ -55,6 +55,13 @@ const useSelection = () => {
     return tracks.length > 0 && tracks.every(t => selectedTracks.some(s => s.id === t.id));
   }, [selectedTracks]);
 
+  // Update a track in selection
+  const updateTrack = useCallback((trackId, updates) => {
+    setSelectedTracks(prev => 
+      prev.map(t => t.id === trackId ? { ...t, ...updates } : t)
+    );
+  }, []);
+
   return {
     selectedTracks,
     toggleSelection,
@@ -65,6 +72,7 @@ const useSelection = () => {
     isSelected,
     selectionCount,
     areAllSelected,
+    updateTrack,
   };
 };
 

@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import { FiX, FiTrash2, FiDownload, FiMusic, FiAlertCircle, FiCheck } from 'react-icons/fi';
 import { FaYoutube } from 'react-icons/fa';
 import { formatDuration, truncateText } from '../../utils/helpers';
 import { Button } from '../UI';
+import { getSongDetails } from '../../services/bigazApi';
 
 // Check if YouTube backend is configured
 const isYouTubeBackendConfigured = () => {
@@ -13,11 +15,36 @@ const DownloadCart = ({
   onClose,
   selectedTracks = [],
   onRemoveTrack,
+  onUpdateTrack,
   onClearAll,
   onDownloadAll,
   downloadProgress = null,
   isDownloading = false,
 }) => {
+  // Fetch missing durations for Big.az tracks when cart opens
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchMissingDurations = async () => {
+      const bigazTracksWithoutDuration = selectedTracks.filter(
+        t => t.source === 'bigaz' && (!t.duration || t.duration === 0) && t.htmlFileName
+      );
+
+      for (const track of bigazTracksWithoutDuration) {
+        try {
+          const songDetails = await getSongDetails(track.htmlFileName);
+          if (songDetails.duration && songDetails.duration > 0 && onUpdateTrack) {
+            onUpdateTrack(track.id, { duration: songDetails.duration });
+          }
+        } catch (err) {
+          console.warn('Failed to fetch duration for track:', track.title, err);
+        }
+      }
+    };
+
+    fetchMissingDurations();
+  }, [isOpen, selectedTracks, onUpdateTrack]);
+
   // Separate tracks by downloadable and non-downloadable
   const downloadableTracks = selectedTracks.filter(t => t.source === 'jamendo' || t.source === 'bigaz');
   const nonDownloadableTracks = selectedTracks.filter(t => t.source !== 'jamendo' && t.source !== 'bigaz');

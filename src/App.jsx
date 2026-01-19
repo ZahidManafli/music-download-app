@@ -17,6 +17,9 @@ import { MusicBrainzTab } from './components/MusicBrainz';
 // BigAz components
 import { BigAzTab } from './components/BigAz';
 
+// BigAz API
+import { getSongDetails } from './services/bigazApi';
+
 // Filter components
 import { CategoryTabs } from './components/Filters';
 
@@ -102,8 +105,25 @@ function App() {
   }, [selection]);
 
   // Handle Big.az song selection
-  const handleSelectBigAzSong = useCallback((song) => {
-    selection.toggleSelection({ ...song, source: 'bigaz' });
+  const handleSelectBigAzSong = useCallback(async (song) => {
+    let songWithDuration = { ...song, source: 'bigaz' };
+    
+    // Fetch duration if missing
+    if (!song.duration || song.duration === 0) {
+      try {
+        if (song.htmlFileName) {
+          const songDetails = await getSongDetails(song.htmlFileName);
+          if (songDetails.duration && songDetails.duration > 0) {
+            songWithDuration.duration = songDetails.duration;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch duration for song:', err);
+        // Continue with duration as 0 if fetch fails
+      }
+    }
+    
+    selection.toggleSelection(songWithDuration);
   }, [selection]);
 
   // Handle add Big.az song to cart
@@ -422,6 +442,7 @@ function App() {
         onClose={() => setCartOpen(false)}
         selectedTracks={selection.selectedTracks}
         onRemoveTrack={selection.removeFromSelection}
+        onUpdateTrack={selection.updateTrack}
         onClearAll={handleClearSelection}
         onDownloadAll={handleDownloadAll}
         downloadProgress={download.progress > 0 ? download.progress : null}
