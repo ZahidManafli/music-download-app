@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { FiGrid, FiList, FiFilter, FiX, FiMusic, FiDatabase } from 'react-icons/fi';
+import { FiGrid, FiList, FiFilter, FiX, FiMusic, FiDatabase, FiGlobe } from 'react-icons/fi';
 import { FaYoutube } from 'react-icons/fa';
 
 // Layout components
@@ -13,6 +13,9 @@ import { YouTubeTab } from './components/YouTube';
 
 // MusicBrainz components
 import { MusicBrainzTab } from './components/MusicBrainz';
+
+// BigAz components
+import { BigAzTab } from './components/BigAz';
 
 // Filter components
 import { CategoryTabs } from './components/Filters';
@@ -38,6 +41,7 @@ const SOURCES = [
   { id: 'jamendo', name: 'Free Music', icon: FiMusic },
   { id: 'youtube', name: 'YouTube', icon: FaYoutube },
   { id: 'musicbrainz', name: 'MusicBrainz', icon: FiDatabase },
+  { id: 'bigaz', name: 'Big.az', icon: FiGlobe },
 ];
 
 function App() {
@@ -45,7 +49,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
-  const [activeSource, setActiveSource] = useState('jamendo'); // 'jamendo' | 'youtube' | 'musicbrainz'
+  const [activeSource, setActiveSource] = useState('jamendo'); // 'jamendo' | 'youtube' | 'musicbrainz' | 'bigaz'
   const [crossSearchQuery, setCrossSearchQuery] = useState(''); // For cross-search from MusicBrainz to YouTube
 
   // Refs
@@ -97,6 +101,18 @@ function App() {
     }
   }, [selection]);
 
+  // Handle Big.az song selection
+  const handleSelectBigAzSong = useCallback((song) => {
+    selection.toggleSelection({ ...song, source: 'bigaz' });
+  }, [selection]);
+
+  // Handle add Big.az song to cart
+  const handleAddBigAzToCart = useCallback((song) => {
+    if (!selection.isSelected(song.id)) {
+      selection.addToSelection({ ...song, source: 'bigaz' });
+    }
+  }, [selection]);
+
   // Handle track play
   const handlePlayTrack = useCallback((track) => {
     player.playTrack(track);
@@ -117,13 +133,27 @@ function App() {
       }
       return;
     }
+    if (track.source === 'bigaz') {
+      // Check if backend is configured
+      if (download.isYouTubeBackendConfigured()) {
+        download.downloadBigAzTrack(track);
+      } else {
+        alert('Backend not configured. Add VITE_YOUTUBE_BACKEND_URL and VITE_YOUTUBE_BACKEND_API_KEY to your .env file.');
+        if (!selection.isSelected(track.id)) {
+          selection.addToSelection(track);
+        }
+        setCartOpen(true);
+      }
+      return;
+    }
     download.downloadSingleTrack(track);
   }, [download, selection]);
 
   // Handle download all as ZIP
   const handleDownloadAll = useCallback(() => {
-    const jamendoTracks = selection.selectedTracks.filter(t => t.source !== 'youtube');
+    const jamendoTracks = selection.selectedTracks.filter(t => t.source === 'jamendo');
     const youtubeVideos = selection.selectedTracks.filter(t => t.source === 'youtube');
+    const bigazSongs = selection.selectedTracks.filter(t => t.source === 'bigaz');
     const timestamp = new Date().toISOString().slice(0, 10);
     
     // Download Jamendo tracks
@@ -137,6 +167,15 @@ function App() {
         download.downloadYouTubeAsZip(youtubeVideos, `youtube-music-${timestamp}`);
       } else {
         alert(`${youtubeVideos.length} YouTube video(s) require backend configuration. Add VITE_YOUTUBE_BACKEND_URL and VITE_YOUTUBE_BACKEND_API_KEY to your .env file.`);
+      }
+    }
+
+    // Download Big.az songs if backend is configured
+    if (bigazSongs.length > 0) {
+      if (download.isYouTubeBackendConfigured()) {
+        download.downloadBigAzAsZip(bigazSongs, `bigaz-music-${timestamp}`);
+      } else {
+        alert(`${bigazSongs.length} Big.az song(s) require backend configuration. Add VITE_YOUTUBE_BACKEND_URL and VITE_YOUTUBE_BACKEND_API_KEY to your .env file.`);
       }
     }
   }, [download, selection.selectedTracks]);
@@ -216,12 +255,14 @@ function App() {
                     className={`
                       flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium
                       transition-all duration-300
-                      ${isActive
+                        ${isActive
                         ? source.id === 'youtube'
                           ? 'bg-red-600 text-white shadow-lg shadow-red-500/25'
                           : source.id === 'musicbrainz'
                             ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/25'
-                            : 'gradient-btn text-white shadow-lg shadow-pink-500/25'
+                            : source.id === 'bigaz'
+                              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
+                              : 'gradient-btn text-white shadow-lg shadow-pink-500/25'
                         : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'
                       }
                     `}
@@ -374,6 +415,15 @@ function App() {
             {activeSource === 'musicbrainz' && (
               <MusicBrainzTab
                 onCrossSearch={handleCrossSearch}
+              />
+            )}
+
+            {/* Big.az Content */}
+            {activeSource === 'bigaz' && (
+              <BigAzTab
+                selectedSongs={getSelectedForSource('bigaz')}
+                onSelectSong={handleSelectBigAzSong}
+                onAddToCart={handleAddBigAzToCart}
               />
             )}
           </div>

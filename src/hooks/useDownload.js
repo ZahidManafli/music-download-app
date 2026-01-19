@@ -304,6 +304,169 @@ const useDownload = () => {
     }
   }, [isYouTubeBackendConfigured]);
 
+  // Download Big.az track via backend
+  const downloadBigAzTrack = useCallback(async (song) => {
+    if (!isYouTubeBackendConfigured()) {
+      setError('Backend not configured. Add VITE_YOUTUBE_BACKEND_URL and VITE_YOUTUBE_BACKEND_API_KEY to your .env file.');
+      setStatus('error');
+      setTimeout(() => {
+        setStatus('idle');
+        setError(null);
+      }, 5000);
+      return;
+    }
+
+    try {
+      setIsDownloading(true);
+      setStatus('downloading');
+      setCurrentTrack(song.title || song.name);
+      setProgress(10);
+
+      const title = encodeURIComponent(song.title || song.name || 'download');
+      const artist = encodeURIComponent(song.artist || '');
+      const url = `${YOUTUBE_BACKEND_URL}/api/bigaz/download/${song.id}?title=${title}&artist=${artist}`;
+
+      setProgress(20);
+
+      const response = await fetch(url, {
+        headers: {
+          'x-api-key': YOUTUBE_API_KEY,
+        },
+      });
+
+      setProgress(50);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Download failed');
+      }
+
+      setProgress(70);
+
+      const blob = await response.blob();
+      const filename = sanitizeFilename(`${song.artist || 'Big.az'} - ${song.title || song.name}.mp3`);
+      
+      setProgress(90);
+      
+      saveAs(blob, filename);
+
+      setProgress(100);
+      setStatus('complete');
+
+      setTimeout(() => {
+        setStatus('idle');
+        setIsDownloading(false);
+        setProgress(0);
+      }, 2000);
+    } catch (err) {
+      console.error('Big.az download error:', err);
+      setError(err.message);
+      setStatus('error');
+      setTimeout(() => {
+        setStatus('idle');
+        setIsDownloading(false);
+        setProgress(0);
+        setError(null);
+      }, 3000);
+    }
+  }, [isYouTubeBackendConfigured]);
+
+  // Download Big.az songs as ZIP via backend
+  const downloadBigAzAsZip = useCallback(async (songs, zipFilename = 'bigaz-music') => {
+    if (songs.length === 0) return;
+
+    if (!isYouTubeBackendConfigured()) {
+      setError('Backend not configured');
+      setStatus('error');
+      setTimeout(() => {
+        setStatus('idle');
+        setError(null);
+      }, 5000);
+      return;
+    }
+
+    try {
+      setIsDownloading(true);
+      setStatus('downloading');
+      setProgress(0);
+      setError(null);
+
+      const zip = new JSZip();
+      const totalSongs = songs.length;
+
+      for (let i = 0; i < totalSongs; i++) {
+        const song = songs[i];
+        setCurrentTrack(song.title || song.name);
+        setCurrentIndex(i);
+
+        try {
+          const title = encodeURIComponent(song.title || song.name || 'download');
+          const artist = encodeURIComponent(song.artist || '');
+          const url = `${YOUTUBE_BACKEND_URL}/api/bigaz/download/${song.id}?title=${title}&artist=${artist}`;
+
+          const response = await fetch(url, {
+            headers: {
+              'x-api-key': YOUTUBE_API_KEY,
+            },
+          });
+
+          if (!response.ok) {
+            console.warn(`Failed to download: ${song.title || song.name}`);
+            continue;
+          }
+
+          const blob = await response.blob();
+          const filename = sanitizeFilename(`${song.artist || 'Big.az'} - ${song.title || song.name}.mp3`);
+          
+          zip.file(filename, blob);
+
+          // Update progress
+          const progressPercent = ((i + 1) / totalSongs) * 90;
+          setProgress(progressPercent);
+        } catch (trackError) {
+          console.warn(`Error downloading ${song.title || song.name}:`, trackError);
+        }
+      }
+
+      // Generate ZIP file
+      setCurrentTrack('Creating ZIP file...');
+      const zipBlob = await zip.generateAsync(
+        { type: 'blob' },
+        (metadata) => {
+          const zipProgress = 90 + (metadata.percent / 100) * 10;
+          setProgress(zipProgress);
+        }
+      );
+
+      // Save ZIP file
+      const finalFilename = sanitizeFilename(`${zipFilename}.zip`);
+      saveAs(zipBlob, finalFilename);
+
+      setProgress(100);
+      setStatus('complete');
+
+      setTimeout(() => {
+        setStatus('idle');
+        setIsDownloading(false);
+        setProgress(0);
+        setCurrentTrack('');
+        setCurrentIndex(0);
+      }, 2000);
+
+    } catch (err) {
+      console.error('Big.az ZIP download error:', err);
+      setError(err.message || 'Failed to create ZIP file');
+      setStatus('error');
+      
+      setTimeout(() => {
+        setStatus('idle');
+        setIsDownloading(false);
+        setProgress(0);
+        setError(null);
+      }, 3000);
+    }
+  }, [isYouTubeBackendConfigured]);
+
   // Reset download state
   const resetDownload = useCallback(() => {
     setIsDownloading(false);
@@ -323,8 +486,10 @@ const useDownload = () => {
     error,
     downloadSingleTrack,
     downloadYouTubeVideo,
+    downloadBigAzTrack,
     downloadAsZip,
     downloadYouTubeAsZip,
+    downloadBigAzAsZip,
     resetDownload,
     isYouTubeBackendConfigured,
   };
