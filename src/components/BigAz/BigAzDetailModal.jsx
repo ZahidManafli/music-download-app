@@ -98,14 +98,15 @@ const BigAzDetailModal = ({
     setIsPlaying(false);
   };
 
-  // Handle add to cart from modal - include audio parameters
+  // Handle add to cart from modal - include audio parameters and duration
   const handleAddToCartFromModal = () => {
     if (!song) return;
     
-    // Include audio parameters if available
+    // Include audio parameters and duration if available
     const songWithParams = {
       ...song,
       audioParams: songDetails?.audioParams || song.audioParams || null,
+      duration: songDetails?.duration || song.duration || 0,
     };
     
     onAddToCart(songWithParams);

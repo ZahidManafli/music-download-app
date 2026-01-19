@@ -23,6 +23,7 @@ const transformSong = (song) => {
     htmlFileName: song.htmlFileName,
     demoId: song.demoId,
     fullTitle: song.fullTitle || `${song.artist} - ${song.title}`,
+    duration: song.duration || 0, // Duration in seconds
     audioUrl: null, // Will be fetched when needed
     downloadStatus: 'pending_backend',
   };
@@ -95,6 +96,7 @@ export const getSongDetails = async (filename) => {
       title: songData.title,
       htmlFileName: songData.htmlFileName,
       audioParams: songData.audioParams,
+      duration: songData.duration || 0, // Duration in seconds
     };
   } catch (error) {
     console.error('Error fetching song details:', error);

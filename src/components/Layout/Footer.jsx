@@ -8,7 +8,7 @@ const Footer = () => {
           {/* Copyright */}
           <div className="flex items-center gap-2 text-gray-400 text-sm">
             <span>Made with</span>
-            <FiHeart className="w-4 h-4 text-pink-500" />
+            Zahid Manafli
             <span>using</span>
             <a 
               href="https://www.jamendo.com" 
@@ -17,6 +17,26 @@ const Footer = () => {
               className="text-pink-400 hover:text-pink-300 transition-colors"
             >
               Jamendo API
+            </a>
+            {/* big.az */}
+            <span>and</span>
+            <a 
+              href="https://big.az"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-pink-400 hover:text-pink-300 transition-colors"
+            >
+              Big.az
+            </a>
+            {/* youtube */}
+            <span>and</span>
+            <a 
+              href="https://www.youtube.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-pink-400 hover:text-pink-300 transition-colors"
+            >
+              YouTube
             </a>
           </div>
 

@@ -26,7 +26,8 @@ const DownloadCart = ({
   const jamendoTracks = downloadableTracks.filter(t => t.source === 'jamendo');
   const bigazTracks = downloadableTracks.filter(t => t.source === 'bigaz');
   
-  const totalDuration = selectedTracks.reduce((acc, track) => acc + (track.duration || 0), 0);
+  // Calculate total duration only from downloadable tracks (Big.az and Jamendo)
+  const totalDuration = downloadableTracks.reduce((acc, track) => acc + (track.duration || 0), 0);
   
   // Calculate total downloadable tracks (only Big.az and Jamendo)
   const downloadableCount = downloadableTracks.length;
