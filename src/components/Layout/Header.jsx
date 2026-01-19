@@ -27,7 +27,7 @@ const Header = ({
               <FiMusic className="w-6 h-6 text-white" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-bold gradient-text">MusicBox</h1>
+              <h1 className="text-xl font-bold gradient-text">Musiqi Qutusu</h1>
               <p className="text-xs text-gray-400">Free Music Downloads</p>
             </div>
           </div>
