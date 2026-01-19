@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { sanitizeFilename } from '../utils/helpers';
+import { getSongDetails, getAudioUrl } from '../services/bigazApi';
 
 // YouTube backend configuration
 const YOUTUBE_BACKEND_URL = import.meta.env.VITE_YOUTUBE_BACKEND_URL || '';
@@ -322,26 +323,36 @@ const useDownload = () => {
       setCurrentTrack(song.title || song.name);
       setProgress(10);
 
-      const title = encodeURIComponent(song.title || song.name || 'download');
-      const artist = encodeURIComponent(song.artist || '');
-      const url = `${YOUTUBE_BACKEND_URL}/api/bigaz/download/${song.id}?title=${title}&artist=${artist}`;
+      // Get audio parameters if not already available
+      let audioParams = song.audioParams;
+      if (!audioParams || !audioParams.lk) {
+        setProgress(20);
+        // Fetch song details to get audio parameters
+        const songDetails = await getSongDetails(song.htmlFileName);
+        audioParams = songDetails.audioParams;
+      }
 
-      setProgress(20);
+      setProgress(30);
 
-      const response = await fetch(url, {
-        headers: {
-          'x-api-key': YOUTUBE_API_KEY,
-        },
-      });
+      // Get audio URL using parameters
+      const audioUrl = await getAudioUrl(song.id, audioParams);
 
       setProgress(50);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Download failed');
-      }
+      // Download directly from audio URL
+      const response = await fetch(audioUrl, {
+        method: 'GET',
+        headers: {
+          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'referer': 'https://mp3.big.az/',
+        },
+      });
 
       setProgress(70);
+
+      if (!response.ok) {
+        throw new Error(`Failed to download audio: ${response.status}`);
+      }
 
       const blob = await response.blob();
       const filename = sanitizeFilename(`${song.artist || 'Big.az'} - ${song.title || song.name}.mp3`);
@@ -400,13 +411,23 @@ const useDownload = () => {
         setCurrentIndex(i);
 
         try {
-          const title = encodeURIComponent(song.title || song.name || 'download');
-          const artist = encodeURIComponent(song.artist || '');
-          const url = `${YOUTUBE_BACKEND_URL}/api/bigaz/download/${song.id}?title=${title}&artist=${artist}`;
+          // Get audio parameters if not already available
+          let audioParams = song.audioParams;
+          if (!audioParams || !audioParams.lk) {
+            // Fetch song details to get audio parameters
+            const songDetails = await getSongDetails(song.htmlFileName);
+            audioParams = songDetails.audioParams;
+          }
 
-          const response = await fetch(url, {
+          // Get audio URL using parameters
+          const audioUrl = await getAudioUrl(song.id, audioParams);
+
+          // Download directly from audio URL
+          const response = await fetch(audioUrl, {
+            method: 'GET',
             headers: {
-              'x-api-key': YOUTUBE_API_KEY,
+              'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'referer': 'https://mp3.big.az/',
             },
           });
 

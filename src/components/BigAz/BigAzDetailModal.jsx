@@ -98,6 +98,19 @@ const BigAzDetailModal = ({
     setIsPlaying(false);
   };
 
+  // Handle add to cart from modal - include audio parameters
+  const handleAddToCartFromModal = () => {
+    if (!song) return;
+    
+    // Include audio parameters if available
+    const songWithParams = {
+      ...song,
+      audioParams: songDetails?.audioParams || song.audioParams || null,
+    };
+    
+    onAddToCart(songWithParams);
+  };
+
   if (!isOpen || !song) return null;
 
   return (
@@ -203,7 +216,7 @@ const BigAzDetailModal = ({
           <div className="flex flex-wrap items-center gap-3">
             <Button
               variant={isInCart ? 'secondary' : 'primary'}
-              onClick={() => onAddToCart(song)}
+              onClick={handleAddToCartFromModal}
               icon={isInCart ? FiCheck : FiPlus}
               className={isInCart ? 'bg-green-600/20 border-green-500/30 text-green-400' : ''}
             >

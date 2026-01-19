@@ -18,15 +18,18 @@ const DownloadCart = ({
   downloadProgress = null,
   isDownloading = false,
 }) => {
-  // Separate tracks by source
-  const jamendoTracks = selectedTracks.filter(t => t.source !== 'youtube');
-  const youtubeTracks = selectedTracks.filter(t => t.source === 'youtube');
+  // Separate tracks by downloadable and non-downloadable
+  const downloadableTracks = selectedTracks.filter(t => t.source === 'jamendo' || t.source === 'bigaz');
+  const nonDownloadableTracks = selectedTracks.filter(t => t.source !== 'jamendo' && t.source !== 'bigaz');
+  
+  // Further separate downloadable tracks by source
+  const jamendoTracks = downloadableTracks.filter(t => t.source === 'jamendo');
+  const bigazTracks = downloadableTracks.filter(t => t.source === 'bigaz');
   
   const totalDuration = selectedTracks.reduce((acc, track) => acc + (track.duration || 0), 0);
-  const youtubeBackendReady = isYouTubeBackendConfigured();
   
-  // Calculate total downloadable tracks
-  const downloadableCount = jamendoTracks.length + (youtubeBackendReady ? youtubeTracks.length : 0);
+  // Calculate total downloadable tracks (only Big.az and Jamendo)
+  const downloadableCount = downloadableTracks.length;
 
   return (
     <>
@@ -57,6 +60,11 @@ const DownloadCart = ({
             </h2>
             <p className="text-sm text-gray-400 mt-1">
               {selectedTracks.length} item{selectedTracks.length !== 1 ? 's' : ''} selected
+              {downloadableCount > 0 && downloadableCount < selectedTracks.length && (
+                <span className="ml-2 text-green-400">
+                  ({downloadableCount} downloadable)
+                </span>
+              )}
             </p>
           </div>
           <button
@@ -81,98 +89,153 @@ const DownloadCart = ({
             </div>
           ) : (
             <div className="space-y-3">
-              {/* Free Music section */}
-              {jamendoTracks.length > 0 && (
+              {/* Downloadable tracks section */}
+              {downloadableTracks.length > 0 && (
                 <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <FiMusic className="w-4 h-4 text-pink-500" />
-                    <span className="text-sm font-medium text-gray-300">
-                      Free Music ({jamendoTracks.length})
-                    </span>
-                    <span className="px-2 py-0.5 rounded text-xs bg-green-500/20 text-green-400">
-                      Ready to download
-                    </span>
-                  </div>
-                  {jamendoTracks.map((track, index) => (
-                    <div 
-                      key={track.id}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 group animate-fadeIn mb-2"
-                      style={{ animationDelay: `${index * 50}ms` }}
-                    >
-                      <img
-                        src={track.image || '/placeholder-album.png'}
-                        alt={track.name}
-                        className="w-12 h-12 rounded-lg object-cover"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-white truncate">
-                          {truncateText(track.name || track.title, 25)}
-                        </h4>
-                        <p className="text-sm text-gray-400 truncate">
-                          {track.artist || track.channel}
-                        </p>
+                  {/* Jamendo tracks */}
+                  {jamendoTracks.length > 0 && (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <FiMusic className="w-4 h-4 text-pink-500" />
+                        <span className="text-sm font-medium text-gray-300">
+                          Free Music ({jamendoTracks.length})
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-xs bg-green-500/20 text-green-400">
+                          Ready to download
+                        </span>
                       </div>
-                      <span className="text-sm text-gray-500">
-                        {formatDuration(track.duration)}
-                      </span>
-                      <button
-                        onClick={() => onRemoveTrack(track.id)}
-                        className="p-2 rounded-lg hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </button>
+                      {jamendoTracks.map((track, index) => (
+                        <div 
+                          key={track.id}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 group animate-fadeIn mb-2"
+                          style={{ animationDelay: `${index * 50}ms` }}
+                        >
+                          <img
+                            src={track.image || '/placeholder-album.png'}
+                            alt={track.name}
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-white truncate">
+                              {truncateText(track.name || track.title, 25)}
+                            </h4>
+                            <p className="text-sm text-gray-400 truncate">
+                              {track.artist || track.channel}
+                            </p>
+                          </div>
+                          <span className="text-sm text-gray-500">
+                            {formatDuration(track.duration)}
+                          </span>
+                          <button
+                            onClick={() => onRemoveTrack(track.id)}
+                            className="p-2 rounded-lg hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <FiTrash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+
+                  {/* Big.az tracks */}
+                  {bigazTracks.length > 0 && (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <FiMusic className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm font-medium text-gray-300">
+                          Big.az ({bigazTracks.length})
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-xs bg-green-500/20 text-green-400">
+                          Ready to download
+                        </span>
+                      </div>
+                      {bigazTracks.map((track, index) => (
+                        <div 
+                          key={track.id}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 group animate-fadeIn mb-2"
+                          style={{ animationDelay: `${index * 50}ms` }}
+                        >
+                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center">
+                            <FiMusic className="w-6 h-6 text-blue-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-white truncate">
+                              {truncateText(track.name || track.title, 25)}
+                            </h4>
+                            <p className="text-sm text-gray-400 truncate">
+                              {track.artist || 'Unknown Artist'}
+                            </p>
+                          </div>
+                          <span className="text-sm text-gray-500">
+                            {formatDuration(track.duration)}
+                          </span>
+                          <button
+                            onClick={() => onRemoveTrack(track.id)}
+                            className="p-2 rounded-lg hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <FiTrash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* YouTube section */}
-              {youtubeTracks.length > 0 && (
+              {/* Non-downloadable tracks section */}
+              {nonDownloadableTracks.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <FaYoutube className="w-4 h-4 text-red-500" />
+                    <FiAlertCircle className="w-4 h-4 text-yellow-500" />
                     <span className="text-sm font-medium text-gray-300">
-                      YouTube ({youtubeTracks.length})
+                      Not Downloadable ({nonDownloadableTracks.length})
                     </span>
-                    {youtubeBackendReady ? (
-                      <span className="px-2 py-0.5 rounded text-xs bg-green-500/20 text-green-400 flex items-center gap-1">
-                        <FiCheck className="w-3 h-3" />
-                        Backend ready
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded text-xs bg-yellow-500/20 text-yellow-400">
-                        Backend not configured
-                      </span>
-                    )}
+                    <span className="px-2 py-0.5 rounded text-xs bg-yellow-500/20 text-yellow-400">
+                      View only
+                    </span>
                   </div>
-                  {youtubeTracks.map((track, index) => (
+                  {nonDownloadableTracks.map((track, index) => (
                     <div 
                       key={track.id}
-                      className={`flex items-center gap-3 p-3 rounded-xl group animate-fadeIn mb-2 ${
-                        youtubeBackendReady 
-                          ? 'bg-green-500/5 border border-green-500/20' 
-                          : 'bg-red-500/5 border border-red-500/20'
-                      }`}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-yellow-500/5 border border-yellow-500/20 group animate-fadeIn mb-2"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      <div className="relative">
-                        <img
-                          src={track.image || track.thumbnail}
-                          alt={track.name || track.title}
-                          className="w-12 h-12 rounded-lg object-cover"
-                        />
-                        <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 flex items-center justify-center">
-                          <FaYoutube className="w-2.5 h-2.5 text-white" />
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-white truncate">
-                          {truncateText(track.name || track.title, 25)}
-                        </h4>
-                        <p className="text-sm text-gray-400 truncate">
-                          {track.artist || track.channel}
-                        </p>
-                      </div>
+                      {track.source === 'youtube' ? (
+                        <>
+                          <div className="relative">
+                            <img
+                              src={track.image || track.thumbnail}
+                              alt={track.name || track.title}
+                              className="w-12 h-12 rounded-lg object-cover"
+                            />
+                            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 flex items-center justify-center">
+                              <FaYoutube className="w-2.5 h-2.5 text-white" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-white truncate">
+                              {truncateText(track.name || track.title, 25)}
+                            </h4>
+                            <p className="text-sm text-gray-400 truncate">
+                              {track.artist || track.channel}
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center">
+                            <FiMusic className="w-6 h-6 text-gray-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-white truncate">
+                              {truncateText(track.name || track.title, 25)}
+                            </h4>
+                            <p className="text-sm text-gray-400 truncate">
+                              {track.artist || track.channel || 'Unknown'}
+                            </p>
+                          </div>
+                        </>
+                      )}
                       <span className="text-sm text-gray-500">
                         {formatDuration(track.duration)}
                       </span>
@@ -193,27 +256,14 @@ const DownloadCart = ({
         {/* Footer */}
         {selectedTracks.length > 0 && (
           <div className="p-6 border-t border-white/10 space-y-4">
-            {/* YouTube backend notice */}
-            {youtubeTracks.length > 0 && !youtubeBackendReady && (
+            {/* Non-downloadable notice */}
+            {nonDownloadableTracks.length > 0 && (
               <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                 <FiAlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <p className="text-yellow-400 font-medium">Backend not configured</p>
+                  <p className="text-yellow-400 font-medium">Some tracks are not downloadable</p>
                   <p className="text-yellow-400/70 mt-1">
-                    Add VITE_YOUTUBE_BACKEND_URL and VITE_YOUTUBE_BACKEND_API_KEY to your .env file to download YouTube videos.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Backend configured success notice */}
-            {youtubeTracks.length > 0 && youtubeBackendReady && (
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                <FiCheck className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                <div className="text-sm">
-                  <p className="text-green-400 font-medium">YouTube backend connected</p>
-                  <p className="text-green-400/70 mt-1">
-                    {youtubeTracks.length} YouTube video{youtubeTracks.length !== 1 ? 's' : ''} ready to download.
+                    Only Big.az and Free Music (Jamendo) tracks can be downloaded. YouTube and other sources are view-only.
                   </p>
                 </div>
               </div>

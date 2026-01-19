@@ -120,19 +120,12 @@ function App() {
 
   // Handle single track download
   const handleDownloadTrack = useCallback((track) => {
-    if (track.source === 'youtube') {
-      // Check if YouTube backend is configured
-      if (download.isYouTubeBackendConfigured()) {
-        download.downloadYouTubeVideo(track);
-      } else {
-        alert('YouTube backend not configured. Add VITE_YOUTUBE_BACKEND_URL and VITE_YOUTUBE_BACKEND_API_KEY to your .env file.');
-        if (!selection.isSelected(track.id)) {
-          selection.addToSelection(track);
-        }
-        setCartOpen(true);
-      }
+    // Only allow downloads for Big.az and Jamendo
+    if (track.source === 'youtube' || track.source === 'musicbrainz' || (track.source !== 'bigaz' && track.source !== 'jamendo')) {
+      alert('This track cannot be downloaded. Only Big.az and Free Music (Jamendo) tracks can be downloaded.');
       return;
     }
+
     if (track.source === 'bigaz') {
       // Check if backend is configured
       if (download.isYouTubeBackendConfigured()) {
@@ -146,28 +139,21 @@ function App() {
       }
       return;
     }
+    
+    // Jamendo track
     download.downloadSingleTrack(track);
   }, [download, selection]);
 
   // Handle download all as ZIP
   const handleDownloadAll = useCallback(() => {
+    // Only download Big.az and Jamendo tracks
     const jamendoTracks = selection.selectedTracks.filter(t => t.source === 'jamendo');
-    const youtubeVideos = selection.selectedTracks.filter(t => t.source === 'youtube');
     const bigazSongs = selection.selectedTracks.filter(t => t.source === 'bigaz');
     const timestamp = new Date().toISOString().slice(0, 10);
     
     // Download Jamendo tracks
     if (jamendoTracks.length > 0) {
       download.downloadAsZip(jamendoTracks, `music-download-${timestamp}`);
-    }
-    
-    // Download YouTube videos if backend is configured
-    if (youtubeVideos.length > 0) {
-      if (download.isYouTubeBackendConfigured()) {
-        download.downloadYouTubeAsZip(youtubeVideos, `youtube-music-${timestamp}`);
-      } else {
-        alert(`${youtubeVideos.length} YouTube video(s) require backend configuration. Add VITE_YOUTUBE_BACKEND_URL and VITE_YOUTUBE_BACKEND_API_KEY to your .env file.`);
-      }
     }
 
     // Download Big.az songs if backend is configured
